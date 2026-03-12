@@ -14,7 +14,21 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #eaf5ff, #dbe8ff 40%, #f8fbff 70%, #e3eeff);
+            color: #0f172a;
+        }
+        .patriotic-card { background: rgba(255,255,255,0.92); backdrop-filter: blur(5px); border: 1px solid rgba(14,55,123,0.25); }
+        .patriotic-btn {
+            background-image: linear-gradient(90deg, #b91c1c, #1e3a8a, #1d4ed8);
+            color: white;
+            border: none;
+            box-shadow: 0 10px 28px rgba(30,58,138,0.3);
+        }
+        .patriotic-btn:hover { filter: brightness(1.07); }
+        .patriotic-header { color: #1e3a8a; text-shadow: 0 2px 5px rgba(30,58,138,0.30); }
+        .patriotic-toolbar { background-color: rgba(224,239,255,0.92); border-top: 3px solid #1e3a8a; border-bottom: 3px solid #b91c1c; }
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
     </style>
 </head>
@@ -402,25 +416,27 @@
                     <div className="max-w-[1600px] mx-auto">
                         <header className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                             <div>
-                                <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Junior International Selection Engine</h1>
-                                <p className="text-slate-500">MAG Team Scoring Optimization</p>
+                                <h1 className="text-3xl md:text-4xl font-extrabold patriotic-header tracking-tight">Junior International Selection Engine</h1>
+                                <p className="text-blue-600 font-semibold">MAG Team Scoring Optimization</p>
                             </div>
                             <div className="flex flex-wrap gap-2">
                                 <button 
                                     onClick={solveTopTeams}
                                     disabled={isCalculating}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 disabled:opacity-50"
+                                    className="patriotic-btn px-5 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 disabled:opacity-50"
                                 >
                                     {isCalculating ? "Calculating..." : "Optimize Team"}
                                 </button>
-                                <button onClick={saveAthletes} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg">Save Scores</button>
-                                <button onClick={clearScores} className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg">Clear Scores</button>
+                                <button onClick={saveAthletes} className="patriotic-btn px-5 py-2 rounded-xl font-bold shadow-lg">Save Scores</button>
+                                <button onClick={clearScores} className="patriotic-btn px-5 py-2 rounded-xl font-bold shadow-lg">Clear Scores</button>
                             </div>
                         </header>
 
                         <div className="flex flex-col gap-8">
-                            <section className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 grid grid-cols-1 md:grid-cols-3 gap-6">
-                                {[{ l: 'Team Size', v: teamSize, s: setTeamSize, m: 10, d: 2 }, 
+                            <section className="patriotic-card rounded-2xl overflow-hidden">
+                                <div className="p-6 border-b border-blue-300 bg-blue-50 sticky left-0 font-bold text-xl patriotic-header">Team Composition</div>
+                                <div className="p-6 patriotic-card grid grid-cols-1 md:grid-cols-3 gap-6">
+                                    {[{ l: 'Team Size', v: teamSize, s: setTeamSize, m: 10, d: 2 }, 
                                   { l: 'Number Up', v: numUp, s: setNumUp, m: 10, d: 1, max: teamSize },
                                   { l: 'Counting Scores', v: numCount, s: setNumCount, m: 10, d: 1, max: numUp }].map((item, i) => (
                                     <div key={i}>
@@ -436,11 +452,12 @@
                                         </select>
                                     </div>
                                 ))}
+                                </div>
                             </section>
 
-                            <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                <div className="p-6 border-b border-slate-100 bg-white sticky left-0 font-bold text-xl">Athlete Pool & All-Around</div>
-                                <div className="p-3 border-b border-slate-100 bg-slate-50 flex flex-wrap gap-3 items-center text-sm">
+                            <section className="patriotic-card rounded-2xl overflow-hidden">
+                                <div className="p-6 border-b border-blue-300 bg-blue-50 sticky left-0 font-bold text-xl patriotic-header">Athlete Pool & All-Around</div>
+                                <div className="p-3 border-b border-red-300 bg-sky-100 patriotic-toolbar flex flex-wrap gap-3 items-center text-sm">
                                     <label className="text-base font-semibold">Sort by:</label>
                                     <select value={poolSort} onChange={(e) => setPoolSort(e.target.value)} className="bg-white border border-slate-200 rounded px-2 py-1 text-sm">
                                         <option value="d">Highest Total D-Score</option>
@@ -533,8 +550,8 @@
                                     const teamScore = isNoBonus ? teamData.total : teamData.totalWithBonus;
                                     const scoreKey = isNoBonus ? 'noBonusTotal' : 'withBonusTotal';
                                     return (
-                                        <div key={`${type}-${rank}`} className="bg-white rounded-2xl shadow-md overflow-hidden border">
-                                            <div className={`p-3 ${isNoBonus ? 'bg-blue-50' : 'bg-red-50'} border-b`}> 
+                                        <div key={`${type}-${rank}`} className="bg-white/90 rounded-2xl shadow-xl overflow-hidden border border-blue-300">
+                                            <div className={`p-3 ${isNoBonus ? 'bg-blue-200/80' : 'bg-red-200/80'} border-b border-blue-300`}> 
                                                 <div className="flex justify-between items-center gap-3">
                                                     <div>
                                                         <div className="text-xs font-bold uppercase tracking-widest">{isNoBonus ? `Rank ${rank} (No Bonus)` : `Rank ${rank} (With Bonus)`}</div>
