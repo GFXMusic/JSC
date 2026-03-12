@@ -220,6 +220,7 @@
             };
 
             const handleStickToggle = (athleteId, eventId) => {
+                if (eventId === 'PH') return; // no stick bonus on pommel horse
                 setAthletes(prev => prev.map(a => {
                     if (a.id !== athleteId) return a;
                     return {
@@ -258,7 +259,7 @@
                     const d = parseScore(athlete.scores[ev.id].d);
                     const e = parseScore(athlete.scores[ev.id].e);
                     const nd = parseScore(athlete.scores[ev.id].nd);
-                    const stick = athlete.bonuses && athlete.bonuses[ev.id] && athlete.bonuses[ev.id].stick ? 0.1 : 0;
+                    const stick = ev.id === 'PH' ? 0 : (athlete.bonuses && athlete.bonuses[ev.id] && athlete.bonuses[ev.id].stick ? 0.1 : 0);
                     totalD += d;
                     totalFinal += (d + e - nd + stick);
                 });
@@ -357,7 +358,7 @@
                                 const eBase = parseScore(a.scores[ev.id].e);
                                 const ndBase = parseScore(a.scores[ev.id].nd);
                                 const dBonus = parseScore(a.bonuses ? a.bonuses[ev.id].d : 0);
-                                const stickBonus = a.bonuses && a.bonuses[ev.id] && a.bonuses[ev.id].stick ? 0.1 : 0;
+                                const stickBonus = ev.id === 'PH' ? 0 : (a.bonuses && a.bonuses[ev.id] && a.bonuses[ev.id].stick ? 0.1 : 0);
                                 const noBonusTotal = dBase + eBase - ndBase + stickBonus;
                                 const withBonusTotal = noBonusTotal + dBonus;
                                 return {
@@ -438,9 +439,9 @@
                             </section>
 
                             <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-                                <div className="p-6 border-b border-slate-100 bg-white sticky left-0 font-bold text-lg">Athlete Pool & All-Around</div>
-                                <div className="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap gap-3 items-center">
-                                    <label className="text-sm">Sort by:</label>
+                                <div className="p-6 border-b border-slate-100 bg-white sticky left-0 font-bold text-xl">Athlete Pool & All-Around</div>
+                                <div className="p-3 border-b border-slate-100 bg-slate-50 flex flex-wrap gap-3 items-center text-sm">
+                                    <label className="text-base font-semibold">Sort by:</label>
                                     <select value={poolSort} onChange={(e) => setPoolSort(e.target.value)} className="bg-white border border-slate-200 rounded px-2 py-1 text-sm">
                                         <option value="d">Highest Total D-Score</option>
                                         <option value="aa">Highest AA</option>
@@ -449,12 +450,12 @@
                                 <div className="overflow-x-auto">
                                     <table className="w-full text-left border-collapse min-w-[950px]">
                                         <thead>
-                                            <tr className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b">
-                                                <th className="p-4 sticky left-0 bg-slate-50 z-10 w-56 shadow-[1px_0_0_0_#e2e8f0]">Athlete Name</th>
-                                                {EVENTS.map(ev => <th key={ev.id} className="p-4 border-l text-center" colSpan="3">{ev.name}</th>)}
-                                                <th className="p-4 border-l bg-blue-50/50 text-center" colSpan="2">All-Around</th>
+                                            <tr className="bg-slate-50 text-sm uppercase tracking-widest text-slate-500 border-b">
+                                                <th className="p-1 sticky left-0 bg-slate-50 z-10 w-56 shadow-[1px_0_0_0_#e2e8f0]">Athlete Name</th>
+                                                {EVENTS.map(ev => <th key={ev.id} className="p-1 border-l text-center" colSpan="3">{ev.name}</th>)}
+                                                <th className="p-1 border-l bg-blue-50/50 text-center" colSpan="2">All-Around</th>
                                             </tr>
-                                            <tr className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b">
+                                            <tr className="bg-slate-50 text-sm uppercase tracking-widest text-slate-500 border-b">
                                                 <th className="p-4 sticky left-0 bg-slate-50 z-10 w-56 shadow-[1px_0_0_0_#e2e8f0]">&nbsp;</th>
                                                 {EVENTS.map(ev => (
                                                     <>
@@ -463,7 +464,7 @@
                                                         <th key={`${ev.id}-nd`} className="p-2 text-center w-16">ND</th>
                                                     </>
                                                 ))}
-                                                <th className="p-2 border-l bg-blue-50/50 text-center">Total D-Score</th>
+                                                <th className="p-2 border-l bg-blue-50/50 text-center">D</th>
                                                 <th className="p-2 bg-blue-50/50 text-center">AA</th>
                                             </tr>
                                         </thead>
@@ -502,12 +503,16 @@
                                                                 <React.Fragment key={`bonus-${ev.id}`}>
                                                                     <td className="px-1 py-0.5 border-l border-slate-200" title="2026 Expotential Bonus Added Automatically"><input type="number" step="0.1" value={athlete.bonuses[ev.id].d} onChange={(e) => handleBonusChange(athlete.id, ev.id, 'd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-[11px] p-0.5 bg-rose-50/50 rounded border border-rose-200 outline-none" /></td>
                                                                     <td className="px-1 py-0.5 border-l border-slate-200 text-center text-[11px]">
-                                                                        <label className="flex items-center justify-center gap-1">
-                                                                            <input type="checkbox" checked={!!athlete.bonuses[ev.id].stick} onChange={() => handleStickToggle(athlete.id, ev.id)} disabled={!athlete.active} className="h-4 w-4" />
-                                                                            Stick
-                                                                        </label>
+                                                                        {ev.id === 'PH' ? (
+                                                                            <span className="text-xxs text-slate-400">N/A</span>
+                                                                        ) : (
+                                                                            <label className="flex items-center justify-center gap-1">
+                                                                                <input type="checkbox" checked={!!athlete.bonuses[ev.id].stick} onChange={() => handleStickToggle(athlete.id, ev.id)} disabled={!athlete.active} className="h-4 w-4" />
+                                                                                Stick
+                                                                            </label>
+                                                                        )}
                                                                     </td>
-                                                                    <td className="px-1 py-0.5 border-r border-slate-200 text-center text-[11px] text-emerald-700">{athlete.bonuses[ev.id].stick ? '+0.10' : ''}</td>
+                                                                    <td className="px-1 py-0.5 border-r border-slate-200 text-center text-[11px] text-emerald-700">{ev.id === 'PH' ? '' : athlete.bonuses[ev.id].stick ? '+0.10' : ''}</td>
                                                                 </React.Fragment>
                                                             ))}
                                                             <td className="p-2 text-center font-semibold text-red-700 bg-red-50/30 border-l border-red-100">{aaWithBonus.d}</td>
@@ -546,27 +551,30 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {teamData.team.map((athlete, ai) => {
-                                                            const eventTotals = EVENTS.map(ev => {
-                                                                const evd = teamData.breakdown[ev.id];
-                                                                if (!evd) return { value: 0, used: false };
-                                                                const ath = evd.allShow.find(s => s.name === athlete.name);
-                                                                const used = evd.countingNames.includes(athlete.name);
-                                                                return { value: ath ? ath[scoreKey] : 0, used };
-                                                            });
-                                                            const personTotal = eventTotals.reduce((sum, s) => sum + s.value, 0);
-                                                            return (
+                                                        {teamData.team
+                                                            .map((athlete) => {
+                                                                const eventTotals = EVENTS.map(ev => {
+                                                                    const evd = teamData.breakdown[ev.id];
+                                                                    if (!evd) return { value: 0, used: false };
+                                                                    const ath = evd.allShow.find(s => s.name === athlete.name);
+                                                                    const used = evd.countingNames.includes(athlete.name);
+                                                                    return { value: ath ? ath[scoreKey] : 0, used };
+                                                                });
+                                                                const personTotal = eventTotals.reduce((sum, s) => sum + s.value, 0);
+                                                                return { athlete, eventTotals, personTotal };
+                                                            })
+                                                            .sort((a, b) => b.personTotal - a.personTotal)
+                                                            .map((row, ai) => (
                                                                 <tr key={ai} className="border-t">
-                                                                    <td className="border p-1 truncate max-w-[8rem]">{athlete.name}</td>
-                                                                    {eventTotals.map((evt, i) => (
+                                                                    <td className="border p-1 truncate max-w-[8rem]">{row.athlete.name}</td>
+                                                                    {row.eventTotals.map((evt, i) => (
                                                                         <td key={i} className={`border p-1 text-right ${evt.used ? 'bg-yellow-100 font-semibold' : ''}`}>
                                                                             {evt.value ? evt.value.toFixed(2) : '-'}
                                                                         </td>
                                                                     ))}
-                                                                    <td className="border p-1 text-right font-bold">{personTotal.toFixed(2)}</td>
+                                                                    <td className="border p-1 text-right font-bold">{row.personTotal.toFixed(2)}</td>
                                                                 </tr>
-                                                            );
-                                                        })}
+                                                            ))}
                                                     </tbody>
                                                     <tfoot>
                                                         <tr>
