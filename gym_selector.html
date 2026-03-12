@@ -38,6 +38,102 @@
             { id: 'HB', name: 'H-Bar' },
         ];
 
+        const BONUS_TABLE = {
+            FX: [
+                { d: 4.3, bonus: 0.102 },
+                { d: 4.4, bonus: 0.163 },
+                { d: 4.5, bonus: 0.231 },
+                { d: 4.6, bonus: 0.308 },
+                { d: 4.7, bonus: 0.393 },
+                { d: 4.8, bonus: 0.488 },
+                { d: 4.9, bonus: 0.594 },
+                { d: 5.0, bonus: 0.711 },
+                { d: 5.1, bonus: 0.841 },
+                { d: 5.2, bonus: 0.984 },
+                { d: 5.3, bonus: 1.143 },
+                { d: 5.4, bonus: 1.318 },
+                { d: 5.5, bonus: 1.511 },
+            ],
+            PH: [
+                { d: 4.1, bonus: 0.102 },
+                { d: 4.2, bonus: 0.163 },
+                { d: 4.3, bonus: 0.231 },
+                { d: 4.4, bonus: 0.308 },
+                { d: 4.5, bonus: 0.393 },
+                { d: 4.6, bonus: 0.488 },
+                { d: 4.7, bonus: 0.594 },
+                { d: 4.8, bonus: 0.711 },
+                { d: 4.9, bonus: 0.841 },
+                { d: 5.0, bonus: 0.984 },
+                { d: 5.1, bonus: 1.143 },
+                { d: 5.2, bonus: 1.318 },
+                { d: 5.3, bonus: 1.511 }
+            ],
+            SR: [
+                { d: 3.5, bonus: 0.102 },
+                { d: 3.6, bonus: 0.163 },
+                { d: 3.7, bonus: 0.231 },
+                { d: 3.8, bonus: 0.308 },
+                { d: 3.9, bonus: 0.393 },
+                { d: 4.0, bonus: 0.488 },
+                { d: 4.1, bonus: 0.594 },
+                { d: 4.2, bonus: 0.711 },
+                { d: 4.3, bonus: 0.841 },
+                { d: 4.4, bonus: 0.984 },
+                { d: 4.5, bonus: 1.143 },
+                { d: 4.6, bonus: 1.318 },
+                { d: 4.7, bonus: 1.511 },
+            ],
+            VT: [
+                { d: 4.4, bonus: 0.102 },
+                { d: 4.8, bonus: 0.531 },
+                { d: 5.2, bonus: 1.002 },
+                { d: 5.6, bonus: 1.516 },
+            ],
+            PB: [
+                { d: 3.9, bonus: 0.102 },
+                { d: 4.0, bonus: 0.163 },
+                { d: 4.1, bonus: 0.231 },
+                { d: 4.2, bonus: 0.308 },
+                { d: 4.3, bonus: 0.393 },
+                { d: 4.4, bonus: 0.488 },
+                { d: 4.5, bonus: 0.594 },
+                { d: 4.6, bonus: 0.711 },
+                { d: 4.7, bonus: 0.841 },
+                { d: 4.8, bonus: 0.984 },
+                { d: 4.9, bonus: 1.143 },
+                { d: 5.0, bonus: 1.318 },
+                { d: 5.1, bonus: 1.511 },
+            ],
+            HB: [
+                { d: 3.9, bonus: 0.102 },
+                { d: 4.0, bonus: 0.163 },
+                { d: 4.1, bonus: 0.231 },
+                { d: 4.2, bonus: 0.308 },
+                { d: 4.3, bonus: 0.393 },
+                { d: 4.4, bonus: 0.488 },
+                { d: 4.5, bonus: 0.594 },
+                { d: 4.6, bonus: 0.711 },
+                { d: 4.7, bonus: 0.841 },
+                { d: 4.8, bonus: 0.984 },
+                { d: 4.9, bonus: 1.143 },
+                { d: 5.0, bonus: 1.318 },
+                { d: 5.1, bonus: 1.511 },
+            ],
+        };
+
+        const getEventBonus = (eventId, dValue) => {
+            const dNum = parseFloat(dValue);
+            if (Number.isNaN(dNum)) return '';
+            const table = BONUS_TABLE[eventId] || [];
+            if (table.length === 0) return '';
+            let selected = 0;
+            for (const row of table) {
+                if (dNum >= row.d) selected = row.bonus;
+            }
+            return selected;
+        };
+
         const App = () => {
             const [teamSize, setTeamSize] = useState(5);
             const [numUp, setNumUp] = useState(4);
@@ -45,19 +141,44 @@
             const [isCalculating, setIsCalculating] = useState(false);
             const [topTeams, setTopTeams] = useState([]);
             
-            const [athletes, setAthletes] = useState(() => 
-                Array.from({ length: 20 }, (_, i) => ({
+            const [athletes, setAthletes] = useState(() => {
+                const defaultNames = [
+                    'Peyton Boerner', 'Hayden Brown', 'Lincoln Dubin', 'Hunter Egan',
+                    'Cooper Gunderson', 'Elijah Gutierrez', 'Kiefer Hong', 'Jovan Jimeno',
+                    'Maksim Kan', 'Jackson Kurecki', 'Ori Reilly', 'Anthony Ruscheinsky',
+                    'Hunter Simpson', 'Jay Watkins',
+                    'Andreas Aranda', 'Dominick Camarena', 'Jason Hao', 'Daniel Martin',
+                    'Bo McCrea', 'Nixon Miles', 'Silas Reive', 'Cal Sanchez'
+                ];
+                return defaultNames.map((name, i) => ({
                     id: i,
-                    name: `Athlete ${i + 1}`,
+                    name,
                     locked: false,
+                    active: true,
                     scores: EVENTS.reduce((acc, event) => ({
                         ...acc,
-                        [event.id]: { d: 4.5 + (Math.random() * 1.5), e: 8.0 + (Math.random() * 1.5) }
+                        [event.id]: { d: '', e: '', nd: '' }
+                    }), {}),
+                    bonuses: EVENTS.reduce((acc, event) => ({
+                        ...acc,
+                        [event.id]: { d: '', e: '', stick: '' }
                     }), {})
-                }))
-            );
+                }));
+            });
 
             useEffect(() => { lucide.createIcons(); }, [athletes, topTeams]);
+
+            useEffect(() => {
+                const saved = localStorage.getItem('gymAthletes');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed)) setAthletes(parsed);
+                    } catch (error) {
+                        console.warn('Invalid gymAthletes data in localStorage', error);
+                    }
+                }
+            }, []);
 
             useEffect(() => {
                 if (numUp > teamSize) setNumUp(teamSize);
@@ -65,10 +186,26 @@
             }, [teamSize, numUp, numCount]);
 
             const handleScoreChange = (athleteId, eventId, type, value) => {
-                const val = parseFloat(value) || 0;
+                setAthletes(prev => prev.map(a => {
+                    if (a.id !== athleteId) return a;
+                    const nextScores = { ...a.scores, [eventId]: { ...a.scores[eventId], [type]: value } };
+                    const nextBonuses = { ...a.bonuses };
+
+                    if (type === 'd') {
+                        nextBonuses[eventId] = {
+                            ...nextBonuses[eventId],
+                            d: getEventBonus(eventId, value)
+                        };
+                    }
+
+                    return { ...a, scores: nextScores, bonuses: nextBonuses };
+                }));
+            };
+
+            const handleBonusChange = (athleteId, eventId, type, value) => {
                 setAthletes(prev => prev.map(a => 
                     a.id === athleteId 
-                        ? { ...a, scores: { ...a.scores, [eventId]: { ...a.scores[eventId], [type]: val } } }
+                        ? { ...a, bonuses: { ...a.bonuses, [eventId]: { ...a.bonuses[eventId], [type]: value } } }
                         : a
                 ));
             };
@@ -84,14 +221,72 @@
                 }));
             };
 
-            const calculateAA = (athlete) => {
+            const saveAthletes = () => {
+                try {
+                    localStorage.setItem('gymAthletes', JSON.stringify(athletes));
+                    alert('Athlete scores saved locally.');
+                } catch (error) {
+                    console.error(error);
+                    alert('Failed to save scores.');
+                }
+            };
+
+            const clearScores = () => {
+                setAthletes(prev => prev.map(a => ({
+                    ...a,
+                    scores: EVENTS.reduce((acc, ev) => ({ ...acc, [ev.id]: { d: '', e: '', nd: '' } }), {}),
+                    bonuses: EVENTS.reduce((acc, ev) => ({ ...acc, [ev.id]: { d: '', e: '', stick: '' } }), {})
+                })));
+                alert('Scores and bonuses cleared.');
+            };
+
+            const loadAthletes = () => {
+                const saved = localStorage.getItem('gymAthletes');
+                if (saved) {
+                    try {
+                        const parsed = JSON.parse(saved);
+                        if (Array.isArray(parsed)) {
+                            setAthletes(parsed);
+                            alert('Scores loaded from local storage.');
+                            return;
+                        }
+                    } catch (error) {
+                        console.warn('Could not parse gymAthletes', error);
+                    }
+                }
+                alert('No saved scores found.');
+            };
+
+            const parseScore = (value) => {
+                const n = parseFloat(value);
+                return Number.isNaN(n) ? 0 : n;
+            };
+
+            const calculateAANoBonus = (athlete) => {
                 let totalD = 0;
                 let totalFinal = 0;
                 EVENTS.forEach(ev => {
-                    const d = athlete.scores[ev.id].d;
-                    const e = athlete.scores[ev.id].e;
+                    const d = parseScore(athlete.scores[ev.id].d);
+                    const e = parseScore(athlete.scores[ev.id].e);
+                    const nd = parseScore(athlete.scores[ev.id].nd);
                     totalD += d;
-                    totalFinal += (d + e);
+                    totalFinal += (d + e - nd);
+                });
+                return { d: totalD.toFixed(3), total: totalFinal.toFixed(3) };
+            };
+
+            const calculateAAWithBonus = (athlete) => {
+                let totalD = 0;
+                let totalFinal = 0;
+                EVENTS.forEach(ev => {
+                    const d = parseScore(athlete.scores[ev.id].d);
+                    const e = parseScore(athlete.scores[ev.id].e);
+                    const nd = parseScore(athlete.scores[ev.id].nd);
+                    const bd = parseScore(athlete.bonuses ? athlete.bonuses[ev.id].d : 0);
+                    const be = parseScore(athlete.bonuses ? athlete.bonuses[ev.id].e : 0);
+                    const stick = parseScore(athlete.bonuses ? athlete.bonuses[ev.id].stick : 0);
+                    totalD += (d + bd);
+                    totalFinal += (d + e - nd + bd + be + stick);
                 });
                 return { d: totalD.toFixed(3), total: totalFinal.toFixed(3) };
             };
@@ -100,8 +295,8 @@
                 setIsCalculating(true);
                 setTimeout(() => {
                     const results = [];
-                    const lockedAthletes = athletes.filter(a => a.locked);
-                    const remainingAthletes = athletes.filter(a => !a.locked);
+                    const lockedAthletes = athletes.filter(a => a.active && a.locked);
+                    const remainingAthletes = athletes.filter(a => a.active && !a.locked);
                     const spotsToFill = teamSize - lockedAthletes.length;
 
                     function getCombinations(array, size) {
@@ -121,7 +316,7 @@
                     }
 
                     const searchPool = spotsToFill > 5 
-                        ? remainingAthletes.sort((a, b) => parseFloat(calculateAA(b).total) - parseFloat(calculateAA(a).total)).slice(0, 12)
+                        ? remainingAthletes.sort((a, b) => parseFloat(calculateAANoBonus(b).total) - parseFloat(calculateAANoBonus(a).total)).slice(0, 12)
                         : remainingAthletes;
 
                     const combos = getCombinations(searchPool, spotsToFill);
@@ -129,30 +324,48 @@
                     combos.forEach(combination => {
                         const team = [...lockedAthletes, ...combination];
                         let teamTotal = 0;
+                        let teamTotalWithBonus = 0;
                         const eventBreakdown = {};
 
                         EVENTS.forEach(ev => {
-                            const eventScores = team.map(a => ({
-                                name: a.name,
-                                total: a.scores[ev.id].d + a.scores[ev.id].e,
-                                d: a.scores[ev.id].d,
-                                e: a.scores[ev.id].e
-                            }))
-                            .sort((a, b) => b.total - a.total)
+                            const eventScores = team.map(a => {
+                                const dBase = parseScore(a.scores[ev.id].d);
+                                const eBase = parseScore(a.scores[ev.id].e);
+                                const ndBase = parseScore(a.scores[ev.id].nd);
+                                const dBonus = parseScore(a.bonuses ? a.bonuses[ev.id].d : 0);
+                                const eBonus = parseScore(a.bonuses ? a.bonuses[ev.id].e : 0);
+                                const stickBonus = parseScore(a.bonuses ? a.bonuses[ev.id].stick : 0);
+                                const noBonusTotal = dBase + eBase - ndBase;
+                                const withBonusTotal = noBonusTotal + dBonus + eBonus + stickBonus;
+                                return {
+                                    name: a.name,
+                                    noBonusTotal,
+                                    withBonusTotal,
+                                    d: dBase,
+                                    e: eBase,
+                                    nd: ndBase,
+                                    bd: dBonus,
+                                    be: eBonus,
+                                    stick: stickBonus
+                                };
+                            })
+                            .sort((a, b) => b.noBonusTotal - a.noBonusTotal)
                             .slice(0, numUp);
 
                             const counting = [...eventScores]
-                                .sort((a, b) => b.total - a.total)
+                                .sort((a, b) => b.noBonusTotal - a.noBonusTotal)
                                 .slice(0, numCount);
                             
-                            const eventSum = counting.reduce((sum, s) => sum + s.total, 0);
+                            const eventSum = counting.reduce((sum, s) => sum + s.noBonusTotal, 0);
+                            const eventSumWithBonus = counting.reduce((sum, s) => sum + s.withBonusTotal, 0);
                             teamTotal += eventSum;
+                            teamTotalWithBonus += eventSumWithBonus;
                             eventBreakdown[ev.id] = {
                                 allShow: eventScores,
                                 countingNames: counting.map(c => c.name)
                             };
                         });
-                        results.push({ team, total: teamTotal, breakdown: eventBreakdown });
+                        results.push({ team, total: teamTotal, totalWithBonus: teamTotalWithBonus, breakdown: eventBreakdown });
                     });
 
                     results.sort((a, b) => b.total - a.total);
@@ -169,13 +382,18 @@
                                 <h1 className="text-3xl font-bold text-slate-800 tracking-tight">Junior International Selection Engine</h1>
                                 <p className="text-slate-500">MAG Team Scoring Optimization</p>
                             </div>
-                            <button 
-                                onClick={solveTopTeams}
-                                disabled={isCalculating}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 disabled:opacity-50"
-                            >
-                                {isCalculating ? "Calculating..." : "Optimize Team"}
-                            </button>
+                            <div className="flex flex-wrap gap-2">
+                                <button 
+                                    onClick={solveTopTeams}
+                                    disabled={isCalculating}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {isCalculating ? "Calculating..." : "Optimize Team"}
+                                </button>
+                                <button onClick={saveAthletes} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg">Save Scores</button>
+                                <button onClick={loadAthletes} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg">Load Scores</button>
+                                <button onClick={clearScores} className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg">Clear Scores</button>
+                            </div>
                         </header>
 
                         <div className="flex flex-col gap-8">
@@ -205,30 +423,63 @@
                                         <thead>
                                             <tr className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b">
                                                 <th className="p-4 sticky left-0 bg-slate-50 z-10 w-56 shadow-[1px_0_0_0_#e2e8f0]">Athlete Name</th>
-                                                {EVENTS.map(ev => <th key={ev.id} className="p-4 border-l text-center" colSpan="2">{ev.name}</th>)}
+                                                {EVENTS.map(ev => <th key={ev.id} className="p-4 border-l text-center" colSpan="3">{ev.name}</th>)}
                                                 <th className="p-4 border-l bg-blue-50/50 text-center" colSpan="2">All-Around</th>
+                                            </tr>
+                                            <tr className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b">
+                                                <th className="p-4 sticky left-0 bg-slate-50 z-10 w-56 shadow-[1px_0_0_0_#e2e8f0]">&nbsp;</th>
+                                                {EVENTS.map(ev => (
+                                                    <>
+                                                        <th key={`${ev.id}-d`} className="p-2 border-l text-center w-16">D</th>
+                                                        <th key={`${ev.id}-e`} className="p-2 text-center w-16">E</th>
+                                                        <th key={`${ev.id}-nd`} className="p-2 text-center w-16">ND</th>
+                                                    </>
+                                                ))}
+                                                <th className="p-2 border-l bg-blue-50/50 text-center">D-Score AA</th>
+                                                <th className="p-2 bg-blue-50/50 text-center">AA</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {athletes.map(athlete => {
-                                                const aa = calculateAA(athlete);
+                                                const aaNoBonus = calculateAANoBonus(athlete);
+                                                const aaWithBonus = calculateAAWithBonus(athlete);
                                                 return (
-                                                    <tr key={athlete.id} className={`${athlete.locked ? 'bg-orange-50/40' : 'hover:bg-blue-50/30'} border-b border-slate-100`}>
-                                                        <td className={`p-2 pl-4 sticky left-0 z-10 flex items-center gap-2 ${athlete.locked ? 'bg-orange-50' : 'bg-white'} shadow-[1px_0_0_0_#e2e8f0]`}>
-                                                            <button onClick={() => toggleLock(athlete.id)} className={`p-1.5 rounded ${athlete.locked ? 'text-orange-600 bg-orange-100' : 'text-slate-300'}`}>
-                                                                <Icon name={athlete.locked ? 'lock' : 'unlock'} size={14} />
-                                                            </button>
-                                                            <input type="text" value={athlete.name} onChange={(e) => setAthletes(prev => prev.map(a => a.id === athlete.id ? {...a, name: e.target.value} : a))} className="bg-transparent font-medium text-sm w-full outline-none" />
-                                                        </td>
-                                                        {EVENTS.map(ev => (
-                                                            <React.Fragment key={ev.id}>
-                                                                <td className="p-1 border-l border-slate-50"><input type="number" step="0.1" value={athlete.scores[ev.id].d} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'd', e.target.value)} className="w-full text-center text-xs p-1 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
-                                                                <td className="p-1"><input type="number" step="0.1" value={athlete.scores[ev.id].e} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'e', e.target.value)} className="w-full text-center text-xs p-1 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
-                                                            </React.Fragment>
-                                                        ))}
-                                                        <td className="p-2 text-center font-semibold text-blue-700 bg-blue-50/30 border-l border-blue-100">{aa.d}</td>
-                                                        <td className="p-2 text-center font-bold text-blue-900 bg-blue-50/30">{aa.total}</td>
-                                                    </tr>
+                                                    <React.Fragment key={athlete.id}>
+                                                        <tr className={`${athlete.locked ? 'bg-orange-50/40' : 'hover:bg-blue-50/30'} border-b border-slate-100`}>
+                                                            <td className={`p-2 pl-4 sticky left-0 z-10 flex flex-col gap-2 ${athlete.locked ? 'bg-orange-50' : athlete.active ? 'bg-white' : 'bg-slate-100'} shadow-[1px_0_0_0_#e2e8f0]`}>
+                                                                <div className="flex items-center gap-2">
+                                                                    <button onClick={() => toggleLock(athlete.id)} className={`p-1.5 rounded ${athlete.locked ? 'text-orange-600 bg-orange-100' : 'text-slate-300'}`}>
+                                                                        <Icon name={athlete.locked ? 'lock' : 'unlock'} size={14} />
+                                                                    </button>
+                                                                    <button onClick={() => setAthletes(prev => prev.map(a => a.id === athlete.id ? {...a, active: !a.active} : a))} className={`text-xs px-2 py-1 rounded ${athlete.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                                        {athlete.active ? 'In Pool' : 'Excluded'}
+                                                                    </button>
+                                                                </div>
+                                                                <input type="text" value={athlete.name} onChange={(e) => setAthletes(prev => prev.map(a => a.id === athlete.id ? {...a, name: e.target.value} : a))} className="bg-transparent font-medium text-sm w-full outline-none" />
+                                                            </td>
+                                                            {EVENTS.map(ev => (
+                                                                <React.Fragment key={ev.id}>
+                                                                    <td className="p-1 border-l border-slate-200"><input type="number" step="0.1" value={athlete.scores[ev.id].d} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
+                                                                    <td className="p-1"><input type="number" step="0.1" value={athlete.scores[ev.id].e} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'e', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
+                                                                    <td className="p-1 border-r border-slate-200"><input type="number" step="0.1" value={athlete.scores[ev.id].nd} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'nd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
+                                                                </React.Fragment>
+                                                            ))}
+                                                            <td className="p-2 text-center font-semibold text-blue-700 bg-blue-50/30 border-l border-blue-100">{aaNoBonus.d}</td>
+                                                            <td className="p-2 text-center font-bold text-blue-900 bg-blue-50/30">{aaNoBonus.total}</td>
+                                                        </tr>
+                                                        <tr className="bg-slate-100/70 border-b border-slate-100">
+                                                            <td className="p-2 pl-4 sticky left-0 z-10 font-semibold text-slate-600 bg-slate-100 shadow-[1px_0_0_0_#e2e8f0]">Bonus</td>
+                                                            {EVENTS.map(ev => (
+                                                                <React.Fragment key={`bonus-${ev.id}`}>
+                                                                    <td className="p-1 border-l border-slate-200"><input type="number" step="0.1" value={athlete.bonuses[ev.id].d} onChange={(e) => handleBonusChange(athlete.id, ev.id, 'd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-rose-50/50 rounded border border-rose-200 outline-none" /></td>
+                                                                    <td className="p-1"><input type="number" step="0.1" value={athlete.bonuses[ev.id].e} onChange={(e) => handleBonusChange(athlete.id, ev.id, 'e', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-rose-50/50 rounded border border-rose-200 outline-none" /></td>
+                                                                    <td className="p-1 border-r border-slate-200"><input type="number" step="0.1" value={athlete.bonuses[ev.id].stick} onChange={(e) => handleBonusChange(athlete.id, ev.id, 'stick', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-rose-50/50 rounded border border-rose-200 outline-none" /></td>
+                                                                </React.Fragment>
+                                                            ))}
+                                                            <td className="p-2 text-center font-semibold text-red-700 bg-red-50/30 border-l border-red-100">{aaWithBonus.d}</td>
+                                                            <td className="p-2 text-center font-bold text-red-900 bg-red-50/30">{aaWithBonus.total}</td>
+                                                        </tr>
+                                                    </React.Fragment>
                                                 );
                                             })}
                                         </tbody>
@@ -246,18 +497,23 @@
                                                     <span className="bg-blue-600 px-2 py-1 rounded text-xs font-black">RANK {idx + 1}</span>
                                                     <div className="flex gap-2">{teamData.team.map(a => <span key={a.id} className="text-[10px] bg-slate-700 px-2 rounded">{a.name}</span>)}</div>
                                                 </div>
-                                                <div className="text-2xl font-black text-yellow-400">{teamData.total.toFixed(3)}</div>
+                                                <div className="text-right">
+                                                    <div className="text-2xl font-black text-yellow-400">No Bonus: {teamData.total.toFixed(3)}</div>
+                                                    <div className="text-xl font-bold text-red-400">With Bonus: {teamData.totalWithBonus.toFixed(3)}</div>
+                                                </div>
                                             </div>
                                             <div className="p-4 bg-slate-50/50 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                                                 {EVENTS.map(ev => {
                                                     const ed = teamData.breakdown[ev.id];
-                                                    const et = ed.allShow.filter(s => ed.countingNames.includes(s.name)).reduce((sum, s) => sum + s.total, 0);
+                                                    const etNoBonus = ed.allShow.filter(s => ed.countingNames.includes(s.name)).reduce((sum, s) => sum + s.noBonusTotal, 0);
+                                                    const etWithBonus = ed.allShow.filter(s => ed.countingNames.includes(s.name)).reduce((sum, s) => sum + s.withBonusTotal, 0);
                                                     return (
                                                         <div key={ev.id} className="bg-white p-3 rounded-xl border border-slate-200">
-                                                            <div className="text-[10px] font-bold border-b pb-1 flex justify-between"><span>{ev.name}</span><span className="text-blue-600">{et.toFixed(2)}</span></div>
+                                                            <div className="text-[10px] font-bold border-b pb-1 flex justify-between"><span>{ev.name}</span><span className="text-blue-600">{etNoBonus.toFixed(2)}</span></div>
+                                                            <div className="text-[10px] font-bold border-b pb-1 flex justify-between"><span>Bonus total</span><span className="text-red-600">{etWithBonus.toFixed(2)}</span></div>
                                                             <div className="mt-1 space-y-1">{ed.allShow.map((s, i) => (
                                                                 <div key={i} className={`flex justify-between text-[11px] px-1 rounded ${ed.countingNames.includes(s.name) ? 'bg-yellow-100 font-bold border-l-2 border-yellow-500' : 'text-slate-400'}`}>
-                                                                    <span className="truncate">{s.name}</span><span>{s.total.toFixed(2)}</span>
+                                                                    <span className="truncate">{s.name}</span><span>{s.noBonusTotal.toFixed(2)}</span>
                                                                 </div>
                                                             ))}</div>
                                                         </div>
