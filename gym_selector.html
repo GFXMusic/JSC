@@ -140,6 +140,7 @@
             const [numCount, setNumCount] = useState(3);
             const [isCalculating, setIsCalculating] = useState(false);
             const [topTeams, setTopTeams] = useState([]);
+            const [poolSort, setPoolSort] = useState('d');
             
             const [athletes, setAthletes] = useState(() => {
                 const defaultNames = [
@@ -161,12 +162,16 @@
                     }), {}),
                     bonuses: EVENTS.reduce((acc, event) => ({
                         ...acc,
-                        [event.id]: { d: '', e: '', stick: '' }
+                        [event.id]: { d: '', e: '', stick: false }
                     }), {})
                 }));
             });
 
-            useEffect(() => { lucide.createIcons(); }, [athletes, topTeams]);
+            useEffect(() => {
+                if (typeof window !== 'undefined' && window.lucide && typeof window.lucide.createIcons === 'function') {
+                    window.lucide.createIcons();
+                }
+            }, [athletes, topTeams]);
 
             useEffect(() => {
                 const saved = localStorage.getItem('gymAthletes');
@@ -210,6 +215,26 @@
                 ));
             };
 
+            const handlePoolToggle = (id) => {
+                setAthletes(prev => prev.map(a => a.id === id ? { ...a, active: !a.active } : a));
+            };
+
+            const handleStickToggle = (athleteId, eventId) => {
+                setAthletes(prev => prev.map(a => {
+                    if (a.id !== athleteId) return a;
+                    return {
+                        ...a,
+                        bonuses: {
+                            ...a.bonuses,
+                            [eventId]: {
+                                ...a.bonuses[eventId],
+                                stick: !a.bonuses[eventId].stick
+                            }
+                        }
+                    };
+                }));
+            };
+
             const toggleLock = (id) => {
                 const lockedCount = athletes.filter(a => a.locked).length;
                 setAthletes(prev => prev.map(a => {
@@ -219,42 +244,6 @@
                     }
                     return a;
                 }));
-            };
-
-            const saveAthletes = () => {
-                try {
-                    localStorage.setItem('gymAthletes', JSON.stringify(athletes));
-                    alert('Athlete scores saved locally.');
-                } catch (error) {
-                    console.error(error);
-                    alert('Failed to save scores.');
-                }
-            };
-
-            const clearScores = () => {
-                setAthletes(prev => prev.map(a => ({
-                    ...a,
-                    scores: EVENTS.reduce((acc, ev) => ({ ...acc, [ev.id]: { d: '', e: '', nd: '' } }), {}),
-                    bonuses: EVENTS.reduce((acc, ev) => ({ ...acc, [ev.id]: { d: '', e: '', stick: '' } }), {})
-                })));
-                alert('Scores and bonuses cleared.');
-            };
-
-            const loadAthletes = () => {
-                const saved = localStorage.getItem('gymAthletes');
-                if (saved) {
-                    try {
-                        const parsed = JSON.parse(saved);
-                        if (Array.isArray(parsed)) {
-                            setAthletes(parsed);
-                            alert('Scores loaded from local storage.');
-                            return;
-                        }
-                    } catch (error) {
-                        console.warn('Could not parse gymAthletes', error);
-                    }
-                }
-                alert('No saved scores found.');
             };
 
             const parseScore = (value) => {
@@ -283,12 +272,46 @@
                     const e = parseScore(athlete.scores[ev.id].e);
                     const nd = parseScore(athlete.scores[ev.id].nd);
                     const bd = parseScore(athlete.bonuses ? athlete.bonuses[ev.id].d : 0);
-                    const be = parseScore(athlete.bonuses ? athlete.bonuses[ev.id].e : 0);
-                    const stick = parseScore(athlete.bonuses ? athlete.bonuses[ev.id].stick : 0);
+                    const stick = athlete.bonuses && athlete.bonuses[ev.id] && athlete.bonuses[ev.id].stick ? 0.1 : 0;
                     totalD += (d + bd);
-                    totalFinal += (d + e - nd + bd + be + stick);
+                    totalFinal += (d + e - nd + bd + stick);
                 });
                 return { d: totalD.toFixed(3), total: totalFinal.toFixed(3) };
+            };
+
+            const sortedAthletes = useMemo(() => {
+                const list = [...athletes];
+                list.sort((a, b) => {
+                    if (a.active !== b.active) return a.active ? -1 : 1;
+                    if (poolSort === 'd') {
+                        const aD = parseFloat(calculateAANoBonus(a).d);
+                        const bD = parseFloat(calculateAANoBonus(b).d);
+                        return bD - aD;
+                    }
+                    const aAA = parseFloat(calculateAANoBonus(a).total);
+                    const bAA = parseFloat(calculateAANoBonus(b).total);
+                    return bAA - aAA;
+                });
+                return list;
+            }, [athletes, poolSort]);
+
+            const saveAthletes = () => {
+                try {
+                    localStorage.setItem('gymAthletes', JSON.stringify(athletes));
+                    alert('Athlete scores saved locally.');
+                } catch (error) {
+                    console.error(error);
+                    alert('Failed to save scores.');
+                }
+            };
+
+            const clearScores = () => {
+                setAthletes(prev => prev.map(a => ({
+                    ...a,
+                    scores: EVENTS.reduce((acc, ev) => ({ ...acc, [ev.id]: { d: '', e: '', nd: '' } }), {}),
+                    bonuses: EVENTS.reduce((acc, ev) => ({ ...acc, [ev.id]: { d: '', e: '', stick: false } }), {})
+                })));
+                alert('Scores and bonuses cleared.');
             };
 
             const solveTopTeams = () => {
@@ -333,10 +356,9 @@
                                 const eBase = parseScore(a.scores[ev.id].e);
                                 const ndBase = parseScore(a.scores[ev.id].nd);
                                 const dBonus = parseScore(a.bonuses ? a.bonuses[ev.id].d : 0);
-                                const eBonus = parseScore(a.bonuses ? a.bonuses[ev.id].e : 0);
-                                const stickBonus = parseScore(a.bonuses ? a.bonuses[ev.id].stick : 0);
+                                const stickBonus = a.bonuses && a.bonuses[ev.id] && a.bonuses[ev.id].stick ? 0.1 : 0;
                                 const noBonusTotal = dBase + eBase - ndBase;
-                                const withBonusTotal = noBonusTotal + dBonus + eBonus + stickBonus;
+                                const withBonusTotal = noBonusTotal + dBonus + stickBonus;
                                 return {
                                     name: a.name,
                                     noBonusTotal,
@@ -345,7 +367,6 @@
                                     e: eBase,
                                     nd: ndBase,
                                     bd: dBonus,
-                                    be: eBonus,
                                     stick: stickBonus
                                 };
                             })
@@ -391,7 +412,6 @@
                                     {isCalculating ? "Calculating..." : "Optimize Team"}
                                 </button>
                                 <button onClick={saveAthletes} className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg">Save Scores</button>
-                                <button onClick={loadAthletes} className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg">Load Scores</button>
                                 <button onClick={clearScores} className="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 rounded-xl font-bold shadow-lg">Clear Scores</button>
                             </div>
                         </header>
@@ -418,8 +438,15 @@
 
                             <section className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
                                 <div className="p-6 border-b border-slate-100 bg-white sticky left-0 font-bold text-lg">Athlete Pool & All-Around</div>
+                                <div className="p-4 border-b border-slate-100 bg-slate-50 flex flex-wrap gap-3 items-center">
+                                    <label className="text-sm">Sort by:</label>
+                                    <select value={poolSort} onChange={(e) => setPoolSort(e.target.value)} className="bg-white border border-slate-200 rounded px-2 py-1 text-sm">
+                                        <option value="d">Highest Total D-Score</option>
+                                        <option value="aa">Highest AA</option>
+                                    </select>
+                                </div>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full text-left border-collapse min-w-[1200px]">
+                                    <table className="w-full text-left border-collapse min-w-[950px]">
                                         <thead>
                                             <tr className="bg-slate-50 text-[10px] uppercase tracking-widest text-slate-500 border-b">
                                                 <th className="p-4 sticky left-0 bg-slate-50 z-10 w-56 shadow-[1px_0_0_0_#e2e8f0]">Athlete Name</th>
@@ -430,38 +457,39 @@
                                                 <th className="p-4 sticky left-0 bg-slate-50 z-10 w-56 shadow-[1px_0_0_0_#e2e8f0]">&nbsp;</th>
                                                 {EVENTS.map(ev => (
                                                     <>
-                                                        <th key={`${ev.id}-d`} className="p-2 border-l text-center w-16">D</th>
+                                                        <th key={`${ev.id}-d`} className="p-2 border-l text-center w-16" title="2026 Expotential Bonus Added Automatically">D</th>
                                                         <th key={`${ev.id}-e`} className="p-2 text-center w-16">E</th>
                                                         <th key={`${ev.id}-nd`} className="p-2 text-center w-16">ND</th>
                                                     </>
                                                 ))}
-                                                <th className="p-2 border-l bg-blue-50/50 text-center">D-Score AA</th>
+                                                <th className="p-2 border-l bg-blue-50/50 text-center">Total D-Score</th>
                                                 <th className="p-2 bg-blue-50/50 text-center">AA</th>
                                             </tr>
                                         </thead>
                                         <tbody>
-                                            {athletes.map(athlete => {
+                                            {sortedAthletes.map(athlete => {
                                                 const aaNoBonus = calculateAANoBonus(athlete);
                                                 const aaWithBonus = calculateAAWithBonus(athlete);
                                                 return (
                                                     <React.Fragment key={athlete.id}>
                                                         <tr className={`${athlete.locked ? 'bg-orange-50/40' : 'hover:bg-blue-50/30'} border-b border-slate-100`}>
-                                                            <td className={`p-2 pl-4 sticky left-0 z-10 flex flex-col gap-2 ${athlete.locked ? 'bg-orange-50' : athlete.active ? 'bg-white' : 'bg-slate-100'} shadow-[1px_0_0_0_#e2e8f0]`}>
-                                                                <div className="flex items-center gap-2">
-                                                                    <button onClick={() => toggleLock(athlete.id)} className={`p-1.5 rounded ${athlete.locked ? 'text-orange-600 bg-orange-100' : 'text-slate-300'}`}>
+                                                            <td className={`px-2 py-1 sticky left-0 z-10 flex flex-col gap-0.5 ${athlete.locked ? 'bg-orange-50' : athlete.active ? 'bg-white' : 'bg-slate-100'} shadow-[1px_0_0_0_#e2e8f0]`}>
+                                                                <input type="text" value={athlete.name} onChange={(e) => setAthletes(prev => prev.map(a => a.id === athlete.id ? {...a, name: e.target.value} : a))} className="bg-transparent font-semibold text-sm w-full outline-none py-0" />
+                                                                <div className="flex items-center gap-1 text-xs">
+                                                                    <button onClick={() => toggleLock(athlete.id)} className={`p-1 rounded ${athlete.locked ? 'text-orange-600 bg-orange-100' : 'text-slate-300'}`}>
                                                                         <Icon name={athlete.locked ? 'lock' : 'unlock'} size={14} />
                                                                     </button>
-                                                                    <button onClick={() => setAthletes(prev => prev.map(a => a.id === athlete.id ? {...a, active: !a.active} : a))} className={`text-xs px-2 py-1 rounded ${athlete.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                                        {athlete.active ? 'In Pool' : 'Excluded'}
-                                                                    </button>
+                                                                    <label className="flex items-center gap-1 text-xxs">
+                                                                        <input type="checkbox" className="h-3 w-3" checked={athlete.active} onChange={() => handlePoolToggle(athlete.id)} />
+                                                                        <span>{athlete.active ? 'In Pool' : 'Excluded'}</span>
+                                                                    </label>
                                                                 </div>
-                                                                <input type="text" value={athlete.name} onChange={(e) => setAthletes(prev => prev.map(a => a.id === athlete.id ? {...a, name: e.target.value} : a))} className="bg-transparent font-medium text-sm w-full outline-none" />
                                                             </td>
                                                             {EVENTS.map(ev => (
                                                                 <React.Fragment key={ev.id}>
-                                                                    <td className="p-1 border-l border-slate-200"><input type="number" step="0.1" value={athlete.scores[ev.id].d} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
-                                                                    <td className="p-1"><input type="number" step="0.1" value={athlete.scores[ev.id].e} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'e', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
-                                                                    <td className="p-1 border-r border-slate-200"><input type="number" step="0.1" value={athlete.scores[ev.id].nd} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'nd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
+                                                                    <td className="px-1 py-0.5 border-l border-slate-200"><input type="number" step="0.1" value={athlete.scores[ev.id].d} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-[11px] p-0.5 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
+                                                                    <td className="px-1 py-0.5"><input type="number" step="0.1" value={athlete.scores[ev.id].e} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'e', e.target.value)} disabled={!athlete.active} className="w-full text-center text-[11px] p-0.5 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
+                                                                    <td className="px-1 py-0.5 border-r border-slate-200"><input type="number" step="0.1" value={athlete.scores[ev.id].nd} onChange={(e) => handleScoreChange(athlete.id, ev.id, 'nd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-[11px] p-0.5 bg-slate-50/50 rounded border border-slate-200 outline-none" /></td>
                                                                 </React.Fragment>
                                                             ))}
                                                             <td className="p-2 text-center font-semibold text-blue-700 bg-blue-50/30 border-l border-blue-100">{aaNoBonus.d}</td>
@@ -471,9 +499,14 @@
                                                             <td className="p-2 pl-4 sticky left-0 z-10 font-semibold text-slate-600 bg-slate-100 shadow-[1px_0_0_0_#e2e8f0]">Bonus</td>
                                                             {EVENTS.map(ev => (
                                                                 <React.Fragment key={`bonus-${ev.id}`}>
-                                                                    <td className="p-1 border-l border-slate-200"><input type="number" step="0.1" value={athlete.bonuses[ev.id].d} onChange={(e) => handleBonusChange(athlete.id, ev.id, 'd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-rose-50/50 rounded border border-rose-200 outline-none" /></td>
-                                                                    <td className="p-1"><input type="number" step="0.1" value={athlete.bonuses[ev.id].e} onChange={(e) => handleBonusChange(athlete.id, ev.id, 'e', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-rose-50/50 rounded border border-rose-200 outline-none" /></td>
-                                                                    <td className="p-1 border-r border-slate-200"><input type="number" step="0.1" value={athlete.bonuses[ev.id].stick} onChange={(e) => handleBonusChange(athlete.id, ev.id, 'stick', e.target.value)} disabled={!athlete.active} className="w-full text-center text-xs p-1 bg-rose-50/50 rounded border border-rose-200 outline-none" /></td>
+                                                                    <td className="px-1 py-0.5 border-l border-slate-200" title="2026 Expotential Bonus Added Automatically"><input type="number" step="0.1" value={athlete.bonuses[ev.id].d} onChange={(e) => handleBonusChange(athlete.id, ev.id, 'd', e.target.value)} disabled={!athlete.active} className="w-full text-center text-[11px] p-0.5 bg-rose-50/50 rounded border border-rose-200 outline-none" /></td>
+                                                                    <td className="px-1 py-0.5 border-l border-slate-200 text-center text-[11px]">
+                                                                        <label className="flex items-center justify-center gap-1">
+                                                                            <input type="checkbox" checked={!!athlete.bonuses[ev.id].stick} onChange={() => handleStickToggle(athlete.id, ev.id)} disabled={!athlete.active} className="h-4 w-4" />
+                                                                            Stick
+                                                                        </label>
+                                                                    </td>
+                                                                    <td className="px-1 py-0.5 border-r border-slate-200 text-center text-[11px] text-emerald-700">{athlete.bonuses[ev.id].stick ? '+0.10' : ''}</td>
                                                                 </React.Fragment>
                                                             ))}
                                                             <td className="p-2 text-center font-semibold text-red-700 bg-red-50/30 border-l border-red-100">{aaWithBonus.d}</td>
