@@ -580,7 +580,12 @@
                                                                 const personTotal = eventTotals.reduce((sum, s) => sum + s.value, 0);
                                                                 return { athlete, eventTotals, personTotal };
                                                             })
-                                                            .sort((a, b) => b.personTotal - a.personTotal)
+                                                            .sort((a, b) => {
+                                                                if (a.athlete.locked !== b.athlete.locked) {
+                                                                    return a.athlete.locked ? -1 : 1;
+                                                                }
+                                                                return b.personTotal - a.personTotal;
+                                                            })
                                                             .map((row, ai) => (
                                                                 <tr key={ai} className="border-t">
                                                                     <td className="border p-1 truncate max-w-[8rem]">{row.athlete.name}</td>
