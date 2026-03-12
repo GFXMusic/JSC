@@ -258,8 +258,9 @@
                     const d = parseScore(athlete.scores[ev.id].d);
                     const e = parseScore(athlete.scores[ev.id].e);
                     const nd = parseScore(athlete.scores[ev.id].nd);
+                    const stick = athlete.bonuses && athlete.bonuses[ev.id] && athlete.bonuses[ev.id].stick ? 0.1 : 0;
                     totalD += d;
-                    totalFinal += (d + e - nd);
+                    totalFinal += (d + e - nd + stick);
                 });
                 return { d: totalD.toFixed(3), total: totalFinal.toFixed(3) };
             };
@@ -357,8 +358,8 @@
                                 const ndBase = parseScore(a.scores[ev.id].nd);
                                 const dBonus = parseScore(a.bonuses ? a.bonuses[ev.id].d : 0);
                                 const stickBonus = a.bonuses && a.bonuses[ev.id] && a.bonuses[ev.id].stick ? 0.1 : 0;
-                                const noBonusTotal = dBase + eBase - ndBase;
-                                const withBonusTotal = noBonusTotal + dBonus + stickBonus;
+                                const noBonusTotal = dBase + eBase - ndBase + stickBonus;
+                                const withBonusTotal = noBonusTotal + dBonus;
                                 return {
                                     name: a.name,
                                     noBonusTotal,
